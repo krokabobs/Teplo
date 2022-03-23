@@ -1,4 +1,4 @@
-#include<iostream>
+﻿#include<iostream>
 #include<fstream>
 #include <cmath>
 #include <vector>
@@ -109,8 +109,8 @@ void Static() {
     for (int i = 0; i < size; i++) {
         cout << rhs[i] << endl;
     }
-    // Gauss method for system J * S = F
-    // forward stroke
+    // решение методом Гауса линейной системы уравнений J * S = F
+    // прямой ход
     for (int k = 0; k < size; k++) {
         for (int j = k + 1; j < size; j++) {
             double d = mtx[j * size + k] / mtx[k * size + k];
@@ -120,7 +120,7 @@ void Static() {
             rhs[j] = rhs[j] - d * rhs[k];
         }
     }
-    // reverse stroke
+    // обратный ход
     S[size - 1] = rhs[size - 1] / mtx[(size - 1) * size + size - 1];
     for (int k = size - 2; k >= 0; k--) {
         double d(0);
@@ -143,8 +143,8 @@ void Static() {
 }
 
 void GaussSolver(const int size, double* mtx, double* rhs, double* S){
-    // Gauss method for system J * S = F
-    // forward stroke
+    // решение методом Гауса линейной системы уравнений J * S = F
+    // прямой ход
     ofstream f("rhs.xls");
     for (int k = 0; k < size; k++) {
         for (int j = k + 1; j < size; j++) {
@@ -156,7 +156,7 @@ void GaussSolver(const int size, double* mtx, double* rhs, double* S){
             f << scientific << rhs[j] << "\t" << endl;
         }
     }
-    // reverse stroke
+    // обратный ход
     S[size - 1] = rhs[size - 1] / mtx[(size - 1) * size + size - 1];
     for (int k = size - 2; k >= 0; k--) {
         double d(0);
@@ -187,7 +187,7 @@ void NotStatic() {
     const double dh = 1;
     const double pc = 1;
 
-    //source is taking into account
+    //источниковый член
     const double Sp = 0;
     const double Sc = 0;
 
@@ -288,8 +288,8 @@ void NotStatic() {
 }
 
 void TwoDim() {
-    const int nx = 5;
-    const int ny = 5;
+    const int nx = 3;
+    const int ny = 3;
     const int size = nx * ny;
     const int n = size * size;
     const int n_link = size - 1;
@@ -297,7 +297,7 @@ void TwoDim() {
     const double dh = 1;
     const double pc = 1;
 
-    //source is taking into account
+    //источниковый член
     const double Sp = 0;
     const double Sc = 0;
 
@@ -311,8 +311,67 @@ void TwoDim() {
     double b = 0;
     double Tb1 = 0;
     double Tb2 = 0l;
+	int l = 1;
     double ap(0), ap0(0), ae(0), aw(0);
     vector<double> mtx(n, 0), rhs(size, 0), S(size, 0), temp(size, 0), diff(size, 0);// ae(4, 0), aw(4, 0), ap(4, 0);
+
+	vector<vector<int>> graph(nx * ny);
+	for (int icx = 0; icx < nx; icx++) {
+		for (int icy = 0; icy < ny; icy++) {
+			if (icx == 0) {
+				if (icy != 0 && icy != ny - 1) {
+					graph[icy].push_back(icy - 1);
+					//graph[icy - 1].push_back(icy);
+					graph[icy].push_back(icy + 1);
+					graph[icy].push_back(icy + ny);
+				}
+				else if (icy == 0) {
+					graph[icy].push_back(icy + 1);
+					graph[icy].push_back(icy + ny);
+				}
+				else {
+					graph[icy].push_back(icy - 1);
+					graph[icy].push_back(icy + ny);
+				}
+			} else if (icy == 0) {
+				if (icx != 0 && icx != nx - 1) {
+					graph[icx*nx].push_back(icx*nx - nx);
+					graph[icx*nx].push_back(icx*nx + 1);
+					graph[icx*nx].push_back(icx*nx + nx);
+				}
+				else if (icx == nx - 1) {
+					graph[icx*nx].push_back(icx*nx - nx);
+					graph[icx*nx].push_back(icx*nx + 1);
+				}
+			} else if (icx == nx - 1) {
+				if (icy != 0 && icy != ny - 1) {
+					graph[icx*nx + icy].push_back(icx*nx + icy - 1);
+					graph[icx*nx + icy].push_back(icx*nx + icy - ny);
+					graph[icx*nx + icy].push_back(icx*nx + icy + 1);
+				}
+				else {
+					graph[icx*nx + icy].push_back(nx*ny - nx - 1);
+					graph[icx*nx + icy].push_back(nx*ny - 2);
+				}
+			} else if (icy == ny - 1) {
+				if (icx != 0 && icx != nx - 1) {
+					graph[icx*nx + icy].push_back(icx*nx + icy - ny);
+					graph[icx*nx + icy].push_back(icx*nx + icy - 1);
+					graph[icx*nx + icy].push_back(icx*nx + icy + ny);
+				}
+			}
+			else
+			{
+				graph[icx*nx + icy].push_back(icx*nx + icy - ny);
+				graph[icx*nx + icy].push_back(icx*nx + icy - 1);
+				graph[icx*nx + icy].push_back(icx*nx + icy + 1);
+				graph[icx*nx + icy].push_back(icx*nx + icy + ny);
+			}
+		}
+	}
+
+
+
     auto ind=[size](int i){
         return i+size*i;
     };
@@ -322,71 +381,97 @@ void TwoDim() {
     auto inddown=[size](int i){
         return (i + 1) * size + i;
     };
-    auto inds=[size](int i){
+    auto inds=[size, nx](int i){
         return (i - nx + 1) * size + i + 1;
     };
-    auto indn=[size](int i){
+    auto indn=[size, nx](int i){
         return (i + nx - 1) * size + size + i;
     };
-    while (timing < T) {
-        timing += dt;
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                dx = dh;
-                ap0 = pc * pow(dx, 2) * 0.25 / dt;
-                ap = 2 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
-                b = Sc * 0.25 * pow(dx, 2) + ap0 * temp[i];
-                if (i == 0) {
-                    //dx *= 0.5;
-                    Tb1 = 2 * Tbl;
-                    ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
-                }
-                if (i == size - 1) {
-                    //dx *= 0.5;
-                    Tb1 = 2 * Tbr;
-                    ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
-                }
-                if (j == 0) {
-                    Tb2 = 2 * Tbd;
-                    ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
-                }
-                if (j == size - 1) {
-                    Tb2 = 2 * Tbu;
-                    ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
-                }
-                if (i < nx) {
-                    rhs[i] = Tb2 / dx + b;
-                    if (i == 0 || i == nx - 1) {
-                        rhs[i] += Tb1 / dx;
-                    }
-                }
-                if (i == nx) {
-                    rhs[i] = Tb1 / dx + b;
-                }
-                if (i != 0 && i % nx == 0 && i != size - 1 && i != nx) {
-                    rhs[i] = Tb1 / dx + b;
-                    rhs[i - 1] = Tb1 / dx + b;
-                }
-                if (i == (size - nx)) {
-                    rhs[i] += Tb2 / dx;
-                }
-                if (i > (size - nx)) {
-                    rhs[i] = Tb2 / dx + b;
-                    if (i == size - 1) {
-                        rhs[i] += Tb1 / dx;
-                    }
-                }
-                mtx[ind(i)] = ap;
-            }
-        }
+	auto grph=[graph](int i) {
+			for (int j = 0; j < graph[i].size(); j++) {
+				return graph[i][j];
+			}
+	};
+		while (timing < T) {
+			timing += dt;
+			for (int i = 0; i < size; i++) {
+				//auto flux = k_ * 0.5;
+				//mtx[i*nx + grph(i)] = -flux;
+				for (int j = 0; j < size; j++) {
+					dx = dh;
+					ap0 = pc * pow(dx, 2) * 0.25 / dt;
+					ap = 2 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
+					b = Sc * 0.25 * pow(dx, 2) + ap0 * temp[i];
+					if (i == 0) {
+						//dx *= 0.5;
+						Tb1 = 2 * Tbl;
+						ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
+					}
+					if (i == size - 1) {
+						//dx *= 0.5;
+						Tb1 = 2 * Tbr;
+						ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
+					}
+					if (j == 0) {
+						Tb2 = 2 * Tbd;
+						ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
+					}
+					if (j == size - 1) {
+						Tb2 = 2 * Tbu;
+						ap = 3 * k_ + ap0 - Sp * pow(dx, 2) * 0.25;
+					}
+					if (i < nx) {
+						rhs[i] = Tb2 / dx + b;
+						if (i == 0 || i == nx - 1) {
+							rhs[i] += Tb1 / dx;
+						}
+					}
+					if (i == nx) {
+						rhs[i] = Tb1 / dx + b;
+					}
+					if (i != 0 && i % nx == 0 && i != size - 1 && i != nx) {
+						rhs[i] = Tb1 / dx + b;
+						rhs[i - 1] = Tb1 / dx + b;
+					}
+					if (i == (size - nx)) {
+						rhs[i] += Tb2 / dx;
+					}
+					if (i > (size - nx)) {
+						rhs[i] = Tb2 / dx + b;
+						if (i == size - 1) {
+							rhs[i] += Tb1 / dx;
+						}
+					}
+					mtx[ind(i)] = ap;
+				}
+			}
         //links
-        for (int i = 0; i < n_link; i++) {
-            auto flux = k_ * 0.5;
-            mtx[indup(i)] = -flux;
-            mtx[inddown(i)] = -flux;
-            mtx[inds(i)] = -flux;
-            mtx[indn(i)] = -flux;
-        }
+        //for (int i = 0; i < n_link; i++) {
+        //    auto flux = k_ * 0.5;
+        //    mtx[indup(i)] = -flux;
+        //    mtx[inddown(i)] = -flux;
+        //    //mtx[inds(i)] = -flux;
+        //    //mtx[indn(i)] = -flux;
+        //}
+		//for (int i = 0; i < size; i++) {
+		//	for (int j = 0; j < graph[i].size(); j++) {
+		//		if (j > i) {
+		//			auto flux = k_ * 0.5;
+		//			mtx[i * (nx + 1) + graph[i][j]] = -flux;
+		//		}
+		//	}
+		//}
+
+		for (int i = 0; i < size; i++) {
+			for (auto g : graph[i]) {
+				if (g > i) {
+					auto flux = k_ * 0.5;
+					mtx[i * (size + 1) + g - i] = -flux;
+					mtx[g * size + i] = -flux;
+				}
+			}
+		}
+
         cout << "Time: " << timing << endl << endl;
         if (timing == dt) {
             cout << "Matrix:";
