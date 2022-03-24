@@ -109,8 +109,8 @@ void Static() {
     for (int i = 0; i < size; i++) {
         cout << rhs[i] << endl;
     }
-    // решение методом Гауса линейной системы уравнений J * S = F
-    // прямой ход
+    // Gauss method for system J * S = F
+    // forward stroke
     for (int k = 0; k < size; k++) {
         for (int j = k + 1; j < size; j++) {
             double d = mtx[j * size + k] / mtx[k * size + k];
@@ -120,7 +120,7 @@ void Static() {
             rhs[j] = rhs[j] - d * rhs[k];
         }
     }
-    // обратный ход
+    // reverse stroke
     S[size - 1] = rhs[size - 1] / mtx[(size - 1) * size + size - 1];
     for (int k = size - 2; k >= 0; k--) {
         double d(0);
@@ -143,8 +143,8 @@ void Static() {
 }
 
 void GaussSolver(const int size, double* mtx, double* rhs, double* S){
-    // решение методом Гауса линейной системы уравнений J * S = F
-    // прямой ход
+    // Gauss method for system J * S = F
+    // forward stroke
     ofstream f("rhs.xls");
     for (int k = 0; k < size; k++) {
         for (int j = k + 1; j < size; j++) {
@@ -156,7 +156,7 @@ void GaussSolver(const int size, double* mtx, double* rhs, double* S){
             f << scientific << rhs[j] << "\t" << endl;
         }
     }
-    // обратный ход
+    // reverse stroke
     S[size - 1] = rhs[size - 1] / mtx[(size - 1) * size + size - 1];
     for (int k = size - 2; k >= 0; k--) {
         double d(0);
@@ -187,7 +187,7 @@ void NotStatic() {
     const double dh = 1;
     const double pc = 1;
 
-    //источниковый член
+    //source is taken into account
     const double Sp = 0;
     const double Sc = 0;
 
@@ -297,7 +297,7 @@ void TwoDim() {
     const double dh = 1;
     const double pc = 1;
 
-    //источниковый член
+    //source is taken into account
     const double Sp = 0;
     const double Sc = 0;
 
